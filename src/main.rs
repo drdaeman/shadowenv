@@ -104,13 +104,11 @@ fn unsafe_getppid() -> Result<u32, failure::Error> {
     match sysinfo::get_current_pid() {
         Ok(pid) => 
             if s.refresh_process(pid) {
-                match s.process(pid) {
-                    Some(process) => match process.parent() {
-                        Some(ppid) => Ok(ppid.as_u32()),
-                        None => Err(format_err!("unable to determine parent pid for {}", pid))
-                    }
-                    None => Err(format_err!("unable to get process info for pid {}", pid)),
-                }
+                s.process(pid).ok_or(
+                    format_err!("unable to get process info for pid {}", pid)
+                )?.parent().ok_or(
+                    format_err!("unable to determine parent pid for {}", pid)
+                ).map(|ppid| ppid.as_u32())
             } else {
                 Err(format_err!("unable to refresh process info for pid {}", pid))
             }
