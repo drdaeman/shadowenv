@@ -147,5 +147,9 @@ pub fn app() -> App<'static, 'static> {
                     SubCommand::with_name("fish")
                         .about("Prints a script which can be eval'd by fish to set up shadowenv."),
                 )
+                .subcommand(
+                    SubCommand::with_name("cmd")
+                        .about("Prints a script which can be eval'd by clink/cmd to set up shadowenv."),
+                )
         )
 }

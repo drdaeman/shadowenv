@@ -2,7 +2,7 @@ use crate::loader;
 
 use ed25519_dalek::Keypair;
 use ed25519_dalek::{Signature, Signer};
-use failure::{Error, Fail};
+use failure::{Error, Fail, err_msg};
 use rand::rngs::OsRng;
 use std::env;
 use std::ffi::OsString;
@@ -52,7 +52,12 @@ pub fn is_dir_trusted(dir: &PathBuf) -> Result<bool, Error> {
 }
 
 fn load_or_generate_signer() -> Result<Keypair, Error> {
-    let path = format!("{}/.config/shadowenv/trust-key-v2", std::env::var("HOME")?);
+    let path;
+    if let Some(home_dir) = dirs::home_dir() {
+        path = home_dir.join(".config").join("shadowenv").join("trust-key-v2");
+    } else {
+        return Err(err_msg("cannot determine home directory"))
+    }
 
     let r_o_bytes: Result<Option<Vec<u8>>, Error> = match fs::read(Path::new(&path)) {
         Ok(bytes) => Ok(Some(bytes)),
@@ -70,7 +75,7 @@ fn load_or_generate_signer() -> Result<Keypair, Error> {
             std::fs::create_dir_all(Path::new(&path).to_path_buf().parent().unwrap())?;
             let mut file = match File::create(OsString::from(&path)) {
                 // TODO: error type
-                Err(why) => panic!("couldn''t write to {}: {}", path, why),
+                Err(why) => panic!("couldn''t write to {:?}: {}", path, why),
                 Ok(f) => f,
             };
 

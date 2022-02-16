@@ -8,9 +8,10 @@ pub fn run(shellname: &str) -> i32 {
         "bash" => print_script(pb, include_bytes!("../sh/shadowenv.bash.in")),
         "zsh" => print_script(pb, include_bytes!("../sh/shadowenv.zsh.in")),
         "fish" => print_script(pb, include_bytes!("../sh/shadowenv.fish.in")),
+        "cmd" => print_script(pb, include_bytes!("../sh/shadowenv.cmd.in")),
         _ => {
             eprintln!(
-                "invalid shell name '{}' (must be one of bash, zsh, fish)",
+                "invalid shell name '{}' (must be one of bash, zsh, fish, cmd)",
                 shellname
             );
             1

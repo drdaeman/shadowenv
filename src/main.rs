@@ -13,10 +13,11 @@ mod trust;
 mod undo;
 
 use crate::shadowenv::Shadowenv;
-use failure::format_err;
+use failure::{err_msg, format_err};
 use std::env;
 use std::path::PathBuf;
 use std::process;
+use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 
 use crate::hook::VariableOutputMode;
 
@@ -99,10 +100,20 @@ fn determine_shellpid_or_crash(arg: Option<&str>) -> u32 {
 }
 
 fn unsafe_getppid() -> Result<u32, failure::Error> {
-    let ppid;
-    unsafe { ppid = libc::getppid() }
-    if ppid < 1 {
-        return Err(format_err!("somehow failed to get ppid"));
+    let mut s = System::new();
+    match sysinfo::get_current_pid() {
+        Ok(pid) => 
+            if s.refresh_process(pid) {
+                match s.process(pid) {
+                    Some(process) => match process.parent() {
+                        Some(ppid) => Ok(ppid.as_u32()),
+                        None => Err(format_err!("unable to determine parent pid for {}", pid))
+                    }
+                    None => Err(format_err!("unable to get process info for pid {}", pid)),
+                }
+            } else {
+                Err(format_err!("unable to refresh process info for pid {}", pid))
+            }
+        Err(err) => Err(err_msg(err)),
     }
-    Ok(ppid as u32)
 }

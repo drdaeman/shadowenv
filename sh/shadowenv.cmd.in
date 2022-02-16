@@ -1,0 +1,28 @@
+local shadowenv_prompt = clink.promptfilter(4)
+
+local function split(str, sep)
+  local result = {}
+  local regex = ("([^%s]+)"):format(sep)
+  for each in str:gmatch(regex) do
+     table.insert(result, each)
+  end
+  return result
+ end
+
+function shadowenv_prompt:filter(prompt)
+  local data = io.popen([[@SELF@ hook --porcelain]]):read("*a")
+  if data == nil then
+    return prompt
+  end
+
+  for record_data in string.gmatch(data, "[^\x1e]+") do
+    local record = split(record_data, "\x1f")
+    if record[1] == "\x02" then
+      os.setenv(record[2], record[3])
+    elseif record[1] == "\x03" then
+      os.setenv(record[2], nil)
+    end
+  end
+
+  return prompt
+end
